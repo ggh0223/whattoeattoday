@@ -10,4 +10,6 @@ export declare class MenuService {
     findOne(id: number): string;
     update(id: number, updateMenuDto: UpdateMenuDto): string;
     remove(id: number): string;
+    fetchInstagramPosts(): Promise<any>;
+    fetchKakaoPosts(): Promise<any>;
 }

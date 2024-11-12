@@ -9,7 +9,7 @@ exports.Routers = [
         module: app_module_1.AppModule,
         children: [
             {
-                path: '/menu',
+                path: '/',
                 module: menu_module_1.MenuModule,
             },
         ],

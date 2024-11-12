@@ -7,7 +7,7 @@ export const Routers = [
     module: AppModule,
     children: [
       {
-        path: '/menu',
+        path: '/',
         module: MenuModule,
       },
     ],

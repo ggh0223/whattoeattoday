@@ -1,4 +1,4 @@
 export declare class AppController {
     constructor();
-    getHello(): Promise<void>;
+    facebookOauth(): Promise<boolean>;
 }
