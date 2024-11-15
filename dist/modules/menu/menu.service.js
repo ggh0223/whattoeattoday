@@ -15,64 +15,136 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MenuService = void 0;
 const common_1 = require("@nestjs/common");
 const supabase_js_1 = require("@supabase/supabase-js");
-const axios_1 = require("axios");
+const schedule_1 = require("@nestjs/schedule");
+const puppeteer = require("puppeteer");
+const moment = require("moment");
 let MenuService = class MenuService {
     constructor(supabase) {
         this.supabase = supabase;
     }
-    async getData() {
-        const { data, error } = await this.supabase.from('your_table').select('*');
+    async handleKakaoCrolling() {
+        const today = moment().format('YYYY-MM-DD');
+        const browser = await puppeteer.launch({ headless: true });
+        const data = await this.crollingKakao(browser);
+        const menu = {
+            title: `${today} dongchun-hansik 메뉴'`,
+            content: '',
+            imageUrl: data,
+            source: 'dongchun-hansik'
+        };
+        const savedMenu = await this.saveMenu(menu);
+        console.log("savedMenu", savedMenu);
+        await browser.close();
+    }
+    async handleInstaCrolling() {
+        console.log("Start Crolling");
+        const today = moment().format('YYYY-MM-DD');
+        const restaraunts = ['iganepork', 'the.siktak'];
+        const browser = await puppeteer.launch({ headless: true });
+        for (let i = 0; i < restaraunts.length - 1; i++) {
+            const res = restaraunts[i];
+            const data = await this.crollingInsta(browser, res);
+            const menu = {
+                title: `${today} ${res} 메뉴'`,
+                content: '',
+                imageUrl: data[1].src,
+                source: res
+            };
+            const savedMenu = await this.saveMenu(menu);
+            console.log("savedMenu", savedMenu);
+        }
+        await browser.close();
+    }
+    async crollingInsta(browser, target) {
+        const page = await browser.newPage();
+        await page.goto("https://www.instagram.com/accounts/login/", {
+            waitUntil: "networkidle2",
+        });
+        await page.waitForSelector('input[name="username"]', { visible: true });
+        await page.waitForSelector('input[name="password"]', { visible: true });
+        const INSTAGRAM_USERNAME = "ggh0223";
+        const INSTAGRAM_PASSWORD = "rlarbgus1!";
+        await page.type('input[name="username"]', INSTAGRAM_USERNAME, { delay: 100 });
+        await page.type('input[name="password"]', INSTAGRAM_PASSWORD, {
+            delay: 100,
+        });
+        await page.click('button[type="submit"]');
+        await page.waitForNavigation({ waitUntil: "networkidle2" });
+        const saveInfoButton = await page.evaluateHandle(() => {
+            const buttons = Array.from(document.querySelectorAll("button"));
+            return buttons.find((button) => button.textContent?.includes("정보 저장"));
+        });
+        console.log("saveInfoButton", saveInfoButton);
+        if (saveInfoButton) {
+            console.log("Save login info button found. Clicking...");
+            await saveInfoButton.click();
+            await page.waitForNavigation({ waitUntil: "networkidle2" });
+        }
+        else {
+            console.log("Save login info button not found. Skipping...");
+        }
+        const profileUrl = `https://www.instagram.com/${target}`;
+        await page.goto(profileUrl, { waitUntil: "networkidle2" });
+        const data = await page.evaluate(() => {
+            const images = Array.from(document.querySelectorAll("img"));
+            return images
+                .map((img) => {
+                console.log(img);
+                return {
+                    src: img.src,
+                    alt: img.alt,
+                };
+            }).filter(img => img.src.startsWith('https://'));
+        });
+        console.log("Image URLs:", data);
+        return data;
+    }
+    async crollingKakao(browser) {
+        const page = await browser.newPage();
+        await page.goto("https://pf.kakao.com/_xgUVZn/posts", {
+            waitUntil: "networkidle2",
+        });
+        const imageUrl = await page.evaluate(() => {
+            const areaCard = document.querySelector('.area_card .wrap_fit_thumb');
+            if (areaCard) {
+                const style = areaCard.getAttribute('style');
+                const urlMatch = style.match(/url\("(.+?)"\)/);
+                return urlMatch ? urlMatch[1] : null;
+            }
+            return null;
+        });
+        console.log('Image URL:', imageUrl);
+        return imageUrl;
+    }
+    async saveMenu(menu) {
+        const { data, error } = await this.supabase.from('menus').insert([menu]).select();
+        console.log(data, error);
         if (error) {
             throw new Error(error.message);
         }
         return data;
-    }
-    create(createMenuDto) {
-        return 'This action adds a new menu';
     }
     async findAll() {
-        const { data, error } = await this.supabase.from('menus').select('*');
+        const { data, error } = await this.supabase.from('menus').select('*').range(0, 3);
         if (error) {
             throw new Error(error.message);
         }
         return data;
-    }
-    findOne(id) {
-        return `This action returns a #${id} menu`;
-    }
-    update(id, updateMenuDto) {
-        return `This action updates a #${id} menu`;
-    }
-    remove(id) {
-        return `This action removes a #${id} menu`;
-    }
-    async fetchInstagramPosts() {
-        const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
-        const response = await axios_1.default.get(`https://graph.instagram.com/v18.0/me/media?fields=id,caption,media_type,media_url,timestamp&access_token=${accessToken}`);
-        return response.data.data.map(post => ({
-            source: 'instagram',
-            title: post.caption?.slice(0, 100) || 'Instagram Post',
-            content: post.caption || '',
-            imageUrls: [post.media_url],
-            createdAt: new Date(post.timestamp)
-        }));
-    }
-    async fetchKakaoPosts() {
-        const accessToken = process.env.KAKAO_ACCESS_TOKEN;
-        const channelId = process.env.KAKAO_CHANNEL_ID;
-        const response = await axios_1.default.get(`https://kapi.kakao.com/v2/api/talk/channels/${channelId}/feed`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        return response.data.items.map(post => ({
-            source: 'kakao',
-            title: post.content.slice(0, 100),
-            content: post.content,
-            imageUrls: post.image_urls || [],
-            createdAt: new Date(post.created_at)
-        }));
     }
 };
 exports.MenuService = MenuService;
+__decorate([
+    (0, schedule_1.Cron)(schedule_1.CronExpression.MONDAY_TO_FRIDAY_AT_11_30AM),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], MenuService.prototype, "handleKakaoCrolling", null);
+__decorate([
+    (0, schedule_1.Cron)(schedule_1.CronExpression.MONDAY_TO_FRIDAY_AT_11_30AM),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], MenuService.prototype, "handleInstaCrolling", null);
 exports.MenuService = MenuService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('SUPABASE')),

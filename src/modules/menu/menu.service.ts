@@ -3,75 +3,154 @@ import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
 import { SupabaseClient } from '@supabase/supabase-js';
 import axios from 'axios'
+import { Cron, CronExpression } from '@nestjs/schedule';
+import * as puppeteer from 'puppeteer';
+import * as moment from 'moment'
 
 @Injectable()
 export class MenuService {
     constructor(@Inject('SUPABASE') private readonly supabase: SupabaseClient) {}
 
-  async getData() {
-    const { data, error } = await this.supabase.from('your_table').select('*');
-    if (error) {
-      throw new Error(error.message);
+    @Cron(CronExpression.MONDAY_TO_FRIDAY_AT_11_30AM)
+    async handleKakaoCrolling() {
+        const today = moment().format('YYYY-MM-DD')
+        const browser = await puppeteer.launch({ headless: true });
+
+        const data = await this.crollingKakao(browser)
+        const menu = {
+            title: `${today} dongchun-hansik 메뉴'`,
+            content: '',
+            imageUrl : data,
+            source: 'dongchun-hansik'
+        }
+        const savedMenu = await this.saveMenu(menu)
+        console.log("savedMenu", savedMenu)
+
+        await browser.close();
     }
-    return data;
-  }
 
-  create(createMenuDto: CreateMenuDto) {
-    return 'This action adds a new menu';
-  }
-
-  async findAll() {
-    const { data, error } = await this.supabase.from('menus').select('*');
-    if (error) {
-      throw new Error(error.message);
+    @Cron(CronExpression.MONDAY_TO_FRIDAY_AT_11_30AM)
+    async handleInstaCrolling() {
+        console.log("Start Crolling")
+        const today = moment().format('YYYY-MM-DD')
+        const restaraunts = ['iganepork','the.siktak']
+        const browser = await puppeteer.launch({ headless: true });
+      
+        for (let i = 0; i < restaraunts.length - 1; i++) {
+            const res = restaraunts[i];
+            const data = await this.crollingInsta(browser, res)
+            const menu = {
+                title: `${today} ${res} 메뉴'`,
+                content: '',
+                imageUrl : data[1].src,
+                source: res
+            }
+            const savedMenu = await this.saveMenu(menu)
+            console.log("savedMenu", savedMenu)
+        }
+        
+        // 브라우저 닫기
+        await browser.close();
     }
-    return data;
-  }
 
-  findOne(id: number) {
-    return `This action returns a #${id} menu`;
-  }
+    async crollingInsta(browser, target) {
+        const page = await browser.newPage();
 
-  update(id: number, updateMenuDto: UpdateMenuDto) {
-    return `This action updates a #${id} menu`;
-  }
+        await page.goto("https://www.instagram.com/accounts/login/", {
+            waitUntil: "networkidle2",
+            // timeout: 60000,
+        });
+        // username 입력 필드가 로드될 때까지 대기
+        await page.waitForSelector('input[name="username"]', { visible: true });
+        await page.waitForSelector('input[name="password"]', { visible: true });
+      
+        // 로그인 정보 입력
+        const INSTAGRAM_USERNAME = "ggh0223";
+        const INSTAGRAM_PASSWORD = "rlarbgus1!";
+      
+        await page.type('input[name="username"]', INSTAGRAM_USERNAME, { delay: 100 });
+        await page.type('input[name="password"]', INSTAGRAM_PASSWORD, {
+          delay: 100,
+        });
+      
+        // 로그인 버튼 클릭
+        await page.click('button[type="submit"]');
+        await page.waitForNavigation({ waitUntil: "networkidle2" });
+      
+        // "로그인 정보를 저장하시겠어요?" 버튼의 선택자
+        const saveInfoButton = await page.evaluateHandle(() => {
+          const buttons = Array.from(document.querySelectorAll("button"));
+          return buttons.find((button) => button.textContent?.includes("정보 저장"));
+        });
+        console.log("saveInfoButton", saveInfoButton);
+        if (saveInfoButton) {
+          console.log("Save login info button found. Clicking...");
+          await saveInfoButton.click();
+          await page.waitForNavigation({ waitUntil: "networkidle2" });
+        } else {
+          console.log("Save login info button not found. Skipping...");
+        }
+      
+        // 로그인 후 크롤링할 페이지 열기
+        const profileUrl = `https://www.instagram.com/${target}`;
+        await page.goto(profileUrl, { waitUntil: "networkidle2" });
+      
+        // 게시글 이미지 URL 가져오기
+        const data = await page.evaluate(() => {
+          const images = Array.from(document.querySelectorAll("img"));
+          return images
+            .map((img) => {
+              console.log(img);
+              return {
+                src: img.src,
+                alt: img.alt,
+              };
+            }).filter(img => img.src.startsWith('https://'))
+        });
+        console.log("Image URLs:", data);
+        return data;
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} menu`;
-  }
+    async crollingKakao(browser) {
+        const page = await browser.newPage();
 
-  
-async fetchInstagramPosts() {
-    const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
-    const response = await axios.get(
-      `https://graph.instagram.com/v18.0/me/media?fields=id,caption,media_type,media_url,timestamp&access_token=${accessToken}`
-    );
-    
-    return response.data.data.map(post => ({
-      source: 'instagram',
-      title: post.caption?.slice(0, 100) || 'Instagram Post',
-      content: post.caption || '',
-      imageUrls: [post.media_url],
-      createdAt: new Date(post.timestamp)
-    }));
-  }
-  
-  async fetchKakaoPosts() {
-    const accessToken = process.env.KAKAO_ACCESS_TOKEN;
-    const channelId = process.env.KAKAO_CHANNEL_ID;
-    const response = await axios.get(
-      `https://kapi.kakao.com/v2/api/talk/channels/${channelId}/feed`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }
-    );
-    
-    return response.data.items.map(post => ({
-      source: 'kakao',
-      title: post.content.slice(0, 100),
-      content: post.content,
-      imageUrls: post.image_urls || [],
-      createdAt: new Date(post.created_at)
-    }));
-  }
+        await page.goto("https://pf.kakao.com/_xgUVZn/posts", {
+            waitUntil: "networkidle2",
+            // timeout: 60000,
+        });
+
+        const imageUrl = await page.evaluate(() => {
+            // area_card 클래스를 가진 요소를 선택
+            const areaCard = document.querySelector('.area_card .wrap_fit_thumb');
+            if (areaCard) {
+            // style 속성에서 background-image URL 추출
+            const style = areaCard.getAttribute('style');
+            const urlMatch = style.match(/url\("(.+?)"\)/);
+            return urlMatch ? urlMatch[1] : null; // URL이 있으면 반환
+            }
+            return null;
+        });
+
+        console.log('Image URL:', imageUrl);
+
+        return imageUrl;
+    }
+
+    async saveMenu(menu) {
+        const { data, error } = await this.supabase.from('menus').insert([menu]).select();
+        console.log(data, error)
+        if (error) {
+          throw new Error(error.message);
+        }
+        return data;
+    }
+
+    async findAll() {
+        const { data, error } = await this.supabase.from('menus').select('*').range(0,3);
+        if (error) {
+        throw new Error(error.message);
+        }
+        return data;
+    }
+
 }

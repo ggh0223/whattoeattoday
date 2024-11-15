@@ -13,6 +13,7 @@ import { MenuModule } from './menu/menu.module';
     CommonModule,
     // TypeOrmModule.forFeature(entities),
     MenuModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

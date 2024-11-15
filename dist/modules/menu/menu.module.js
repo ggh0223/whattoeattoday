@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const menu_service_1 = require("./menu.service");
 const menu_controller_1 = require("./menu.controller");
 const database_module_1 = require("../common/database/database.module");
+const schedule_1 = require("@nestjs/schedule");
 let MenuModule = class MenuModule {
 };
 exports.MenuModule = MenuModule;
 exports.MenuModule = MenuModule = __decorate([
     (0, common_1.Module)({
-        imports: [database_module_1.DatabaseModule],
+        imports: [database_module_1.DatabaseModule, schedule_1.ScheduleModule.forRoot()],
         controllers: [menu_controller_1.MenuController],
         providers: [menu_service_1.MenuService],
     })
