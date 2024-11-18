@@ -11,8 +11,14 @@ import * as moment from 'moment'
 export class MenuService {
     constructor(@Inject('SUPABASE') private readonly supabase: SupabaseClient) {}
 
+    async onModuleInit() {
+        console.log(moment())
+    }
+
+
     @Cron(CronExpression.MONDAY_TO_FRIDAY_AT_11_30AM)
     async handleKakaoCrolling() {
+        console.log("Start Crolling")
         const today = moment().format('YYYY-MM-DD')
         const browser = await puppeteer.launch({ headless: true });
 

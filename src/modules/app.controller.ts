@@ -9,8 +9,4 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export class AppController {
   constructor() {}
 
-  @Get('/fb/oauth')
-  async facebookOauth() {
-    return true
-  }
 }

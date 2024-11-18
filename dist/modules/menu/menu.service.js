@@ -22,7 +22,11 @@ let MenuService = class MenuService {
     constructor(supabase) {
         this.supabase = supabase;
     }
+    async onModuleInit() {
+        console.log(moment());
+    }
     async handleKakaoCrolling() {
+        console.log("Start Crolling");
         const today = moment().format('YYYY-MM-DD');
         const browser = await puppeteer.launch({ headless: true });
         const data = await this.crollingKakao(browser);
