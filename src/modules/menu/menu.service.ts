@@ -180,6 +180,6 @@ export class MenuService {
     if (error) {
       throw new Error(error.message);
     }
-    return data;
+    return data ?? [];
   }
 }
