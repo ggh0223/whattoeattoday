@@ -21,42 +21,65 @@ const moment = require("moment");
 let MenuService = class MenuService {
     constructor(supabase) {
         this.supabase = supabase;
+        this.SOURCES = [
+            'https://www.instagram.com/iganepork',
+            'https://www.instagram.com/the.siktak',
+            'https://pf.kakao.com/_xgUVZn/posts',
+        ];
     }
-    async onModuleInit() {
-        console.log(moment());
-    }
-    async handleKakaoCrolling() {
-        console.log('Start Kakao Crolling');
-        const browser = await puppeteer.launch({ headless: true });
-        const data = await this.crollingKakao(browser);
-        const menu = {
-            title: `동천한식뷔페'`,
-            content: '',
-            imageUrl: data,
-            source: 'https://pf.kakao.com/_xgUVZn/posts',
-        };
-        const savedMenu = await this.saveMenu(menu);
-        console.log('savedMenu', savedMenu);
-        await browser.close();
-    }
-    async handleInstaCrolling() {
-        console.log('Start Insta Crolling');
-        const restaraunts = ['이가네', '더 식탁'];
-        const instagram = ['iganepork', 'the.siktak'];
-        const browser = await puppeteer.launch({ headless: true });
-        for (let i = 0; i < restaraunts.length - 1; i++) {
-            const res = restaraunts[i];
-            const data = await this.crollingInsta(browser, res);
-            const menu = {
-                title: res,
-                content: '',
-                imageUrl: data[1].src,
-                source: `https://www.instagram.com/${instagram[i]}`,
-            };
-            const savedMenu = await this.saveMenu(menu);
-            console.log('savedMenu', savedMenu);
+    async handleCrolling() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        if ((hours === 10 && minutes >= 50) || (hours === 11 && minutes <= 30)) {
+            console.log('Fetching data...');
+            const crollingTarget = [];
+            for (let i = 0; i < this.SOURCES.length; i++) {
+                const source = this.SOURCES[i];
+                const data = await this.findBySource(source);
+                if (data && Array.isArray(data) && data.length > 0) {
+                    continue;
+                }
+                else {
+                    crollingTarget.push(source);
+                }
+            }
+            if (crollingTarget.length > 0) {
+                const browser = await puppeteer.launch({ headless: true });
+                for (let i = 0; i < crollingTarget.length; i++) {
+                    const domain = crollingTarget[i];
+                    if (domain.includes('instagram')) {
+                        const restaraunts = ['이가네', '더 식탁'];
+                        const instagram = ['iganepork', 'the.siktak'];
+                        const browser = await puppeteer.launch({ headless: true });
+                        for (let i = 0; i < restaraunts.length - 1; i++) {
+                            const res = restaraunts[i];
+                            const data = await this.crollingInsta(browser, res);
+                            const menu = {
+                                title: res,
+                                content: '',
+                                imageUrl: data[1].src,
+                                source: `https://www.instagram.com/${instagram[i]}`,
+                            };
+                            const savedMenu = await this.saveMenu(menu);
+                            console.log('savedMenu', savedMenu);
+                        }
+                    }
+                    else {
+                        const data = await this.crollingKakao(browser);
+                        const menu = {
+                            title: `동천한식뷔페`,
+                            content: '',
+                            imageUrl: data,
+                            source: 'https://pf.kakao.com/_xgUVZn/posts',
+                        };
+                        const savedMenu = await this.saveMenu(menu);
+                        console.log('savedMenu', savedMenu);
+                    }
+                }
+                await browser.close();
+            }
         }
-        await browser.close();
     }
     async crollingInsta(browser, target) {
         const page = await browser.newPage();
@@ -92,6 +115,7 @@ let MenuService = class MenuService {
         await page.goto(profileUrl, { waitUntil: 'networkidle2' });
         const data = await page.evaluate(() => {
             const images = Array.from(document.querySelectorAll('img'));
+            console.log(images);
             return images
                 .map((img) => {
                 console.log(img);
@@ -122,15 +146,29 @@ let MenuService = class MenuService {
         console.log('Image URL:', imageUrl);
         return imageUrl;
     }
+    async checkCrolling(source) {
+        const browser = await puppeteer.launch({ headless: true });
+        const data = await this.crollingInsta(browser, source);
+        const menu = {
+            title: source,
+            content: '',
+            imageUrl: data[1].src,
+            source: `https://www.instagram.com/${source}`,
+        };
+        const savedMenu = await this.saveMenu(menu);
+        console.log(savedMenu);
+        await browser.close();
+    }
     async saveMenu(menu) {
         const { data: existingData, error: existingError } = await this.supabase
             .from('menus')
             .select('id')
             .eq('imageUrl', menu.imageUrl);
+        console.log(existingData);
         if (existingError) {
             throw new Error(existingError.message);
         }
-        if (existingData) {
+        if (existingData.length > 0) {
             throw new Error('이미 존재하는 식단입니다.');
         }
         const { data, error } = await this.supabase
@@ -154,20 +192,26 @@ let MenuService = class MenuService {
         }
         return data;
     }
+    async findBySource(source) {
+        const today = moment().format('YYYY-MM-DD 00:00:00');
+        const { data, error } = await this.supabase
+            .from('menus')
+            .select('*')
+            .eq('source', source)
+            .gt('created_at', today);
+        if (error) {
+            return null;
+        }
+        return data;
+    }
 };
 exports.MenuService = MenuService;
 __decorate([
-    (0, schedule_1.Cron)('0 05 11 * * 1-5'),
+    (0, schedule_1.Cron)('0 */5 10,11 * * 1-5'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
-], MenuService.prototype, "handleKakaoCrolling", null);
-__decorate([
-    (0, schedule_1.Cron)('0 05 11 * * 1-5'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], MenuService.prototype, "handleInstaCrolling", null);
+], MenuService.prototype, "handleCrolling", null);
 exports.MenuService = MenuService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('SUPABASE')),

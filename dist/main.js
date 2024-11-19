@@ -18,7 +18,7 @@ async function bootstrap() {
     app.useGlobalPipes(new common_1.ValidationPipe({ transform: true }));
     app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter());
     (0, swagger_1.setupSwagger)(app);
-    await app.listen(3000, '0.0.0.0');
+    await app.listen(3001, '0.0.0.0');
 }
 bootstrap();
 //# sourceMappingURL=main.js.map
