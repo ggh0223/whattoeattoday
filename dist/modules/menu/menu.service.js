@@ -26,71 +26,72 @@ let MenuService = class MenuService {
         console.log(moment());
     }
     async handleKakaoCrolling() {
-        console.log("Start Crolling");
-        const today = moment().format('YYYY-MM-DD');
+        console.log('Start Kakao Crolling');
         const browser = await puppeteer.launch({ headless: true });
         const data = await this.crollingKakao(browser);
         const menu = {
-            title: `${today} dongchun-hansik 메뉴'`,
+            title: `동천한식뷔페'`,
             content: '',
             imageUrl: data,
-            source: 'dongchun-hansik'
+            source: 'https://pf.kakao.com/_xgUVZn/posts',
         };
         const savedMenu = await this.saveMenu(menu);
-        console.log("savedMenu", savedMenu);
+        console.log('savedMenu', savedMenu);
         await browser.close();
     }
     async handleInstaCrolling() {
-        console.log("Start Crolling");
-        const today = moment().format('YYYY-MM-DD');
-        const restaraunts = ['iganepork', 'the.siktak'];
+        console.log('Start Insta Crolling');
+        const restaraunts = ['이가네', '더 식탁'];
+        const instagram = ['iganepork', 'the.siktak'];
         const browser = await puppeteer.launch({ headless: true });
         for (let i = 0; i < restaraunts.length - 1; i++) {
             const res = restaraunts[i];
             const data = await this.crollingInsta(browser, res);
             const menu = {
-                title: `${today} ${res} 메뉴'`,
+                title: res,
                 content: '',
                 imageUrl: data[1].src,
-                source: res
+                source: `https://www.instagram.com/${instagram[i]}`,
             };
             const savedMenu = await this.saveMenu(menu);
-            console.log("savedMenu", savedMenu);
+            console.log('savedMenu', savedMenu);
         }
         await browser.close();
     }
     async crollingInsta(browser, target) {
         const page = await browser.newPage();
-        await page.goto("https://www.instagram.com/accounts/login/", {
-            waitUntil: "networkidle2",
+        await page.goto('https://www.instagram.com/accounts/login/', {
+            waitUntil: 'networkidle2',
         });
         await page.waitForSelector('input[name="username"]', { visible: true });
         await page.waitForSelector('input[name="password"]', { visible: true });
-        const INSTAGRAM_USERNAME = "ggh0223";
-        const INSTAGRAM_PASSWORD = "rlarbgus1!";
-        await page.type('input[name="username"]', INSTAGRAM_USERNAME, { delay: 100 });
+        const INSTAGRAM_USERNAME = 'ggh0223';
+        const INSTAGRAM_PASSWORD = 'rlarbgus1!';
+        await page.type('input[name="username"]', INSTAGRAM_USERNAME, {
+            delay: 100,
+        });
         await page.type('input[name="password"]', INSTAGRAM_PASSWORD, {
             delay: 100,
         });
         await page.click('button[type="submit"]');
-        await page.waitForNavigation({ waitUntil: "networkidle2" });
+        await page.waitForNavigation({ waitUntil: 'networkidle2' });
         const saveInfoButton = await page.evaluateHandle(() => {
-            const buttons = Array.from(document.querySelectorAll("button"));
-            return buttons.find((button) => button.textContent?.includes("정보 저장"));
+            const buttons = Array.from(document.querySelectorAll('button'));
+            return buttons.find((button) => button.textContent?.includes('정보 저장'));
         });
-        console.log("saveInfoButton", saveInfoButton);
+        console.log('saveInfoButton', saveInfoButton);
         if (saveInfoButton) {
-            console.log("Save login info button found. Clicking...");
+            console.log('Save login info button found. Clicking...');
             await saveInfoButton.click();
-            await page.waitForNavigation({ waitUntil: "networkidle2" });
+            await page.waitForNavigation({ waitUntil: 'networkidle2' });
         }
         else {
-            console.log("Save login info button not found. Skipping...");
+            console.log('Save login info button not found. Skipping...');
         }
         const profileUrl = `https://www.instagram.com/${target}`;
-        await page.goto(profileUrl, { waitUntil: "networkidle2" });
+        await page.goto(profileUrl, { waitUntil: 'networkidle2' });
         const data = await page.evaluate(() => {
-            const images = Array.from(document.querySelectorAll("img"));
+            const images = Array.from(document.querySelectorAll('img'));
             return images
                 .map((img) => {
                 console.log(img);
@@ -98,15 +99,16 @@ let MenuService = class MenuService {
                     src: img.src,
                     alt: img.alt,
                 };
-            }).filter(img => img.src.startsWith('https://'));
+            })
+                .filter((img) => img.src.startsWith('https://'));
         });
-        console.log("Image URLs:", data);
+        console.log('Image URLs:', data);
         return data;
     }
     async crollingKakao(browser) {
         const page = await browser.newPage();
-        await page.goto("https://pf.kakao.com/_xgUVZn/posts", {
-            waitUntil: "networkidle2",
+        await page.goto('https://pf.kakao.com/_xgUVZn/posts', {
+            waitUntil: 'networkidle2',
         });
         const imageUrl = await page.evaluate(() => {
             const areaCard = document.querySelector('.area_card .wrap_fit_thumb');
@@ -121,7 +123,20 @@ let MenuService = class MenuService {
         return imageUrl;
     }
     async saveMenu(menu) {
-        const { data, error } = await this.supabase.from('menus').insert([menu]).select();
+        const { data: existingData, error: existingError } = await this.supabase
+            .from('menus')
+            .select('id')
+            .eq('imageUrl', menu.imageUrl);
+        if (existingError) {
+            throw new Error(existingError.message);
+        }
+        if (existingData) {
+            throw new Error('이미 존재하는 식단입니다.');
+        }
+        const { data, error } = await this.supabase
+            .from('menus')
+            .insert([menu])
+            .select();
         console.log(data, error);
         if (error) {
             throw new Error(error.message);
@@ -129,7 +144,11 @@ let MenuService = class MenuService {
         return data;
     }
     async findAll() {
-        const { data, error } = await this.supabase.from('menus').select('*').range(0, 3);
+        const today = moment().format('YYYY-MM-DD 00:00:00');
+        const { data, error } = await this.supabase
+            .from('menus')
+            .select('*')
+            .gt('created_at', today);
         if (error) {
             throw new Error(error.message);
         }
@@ -138,13 +157,13 @@ let MenuService = class MenuService {
 };
 exports.MenuService = MenuService;
 __decorate([
-    (0, schedule_1.Cron)(schedule_1.CronExpression.MONDAY_TO_FRIDAY_AT_11_30AM),
+    (0, schedule_1.Cron)('0 05 11 * * 1-5'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], MenuService.prototype, "handleKakaoCrolling", null);
 __decorate([
-    (0, schedule_1.Cron)(schedule_1.CronExpression.MONDAY_TO_FRIDAY_AT_11_30AM),
+    (0, schedule_1.Cron)('0 05 11 * * 1-5'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
