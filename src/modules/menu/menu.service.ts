@@ -16,7 +16,7 @@ export class MenuService {
     'https://www.instagram.com/the.siktak',
     'https://pf.kakao.com/_xgUVZn/posts',
   ];
-  @Cron('0 */5 10,11 * * 1-5')
+  @Cron('0 */2 10,11 * * 1-5')
   async handleCrolling() {
     const now = new Date();
     const hours = now.getHours();
@@ -36,12 +36,14 @@ export class MenuService {
           crollingTarget.push(source);
         }
       }
-
+      console.log('check', crollingTarget);
       if (crollingTarget.length > 0) {
         const browser = await puppeteer.launch({ headless: true });
 
         for (let i = 0; i < crollingTarget.length; i++) {
           const domain = crollingTarget[i];
+          console.log('domain', domain);
+
           if (domain.includes('instagram')) {
             const restaraunts = ['이가네', '더 식탁'];
             const instagram = ['iganepork', 'the.siktak'];
@@ -49,7 +51,12 @@ export class MenuService {
 
             for (let i = 0; i < restaraunts.length - 1; i++) {
               const res = restaraunts[i];
-              const data = await this.crollingInsta(browser, res);
+              console.log(i, res);
+              const { data, error } = await this.crollingInsta(browser, res);
+              if (error) {
+                console.log(error);
+                continue;
+              }
               const menu = {
                 title: res,
                 content: '',
@@ -78,67 +85,76 @@ export class MenuService {
   }
 
   async crollingInsta(browser, target) {
-    const page = await browser.newPage();
+    try {
+      const page = await browser.newPage();
 
-    await page.goto('https://www.instagram.com/accounts/login/', {
-      waitUntil: 'networkidle2',
-      // timeout: 60000,
-    });
-    // username 입력 필드가 로드될 때까지 대기
-    await page.waitForSelector('input[name="username"]', { visible: true });
-    await page.waitForSelector('input[name="password"]', { visible: true });
+      await page.goto('https://www.instagram.com/accounts/login/', {
+        waitUntil: 'networkidle2',
+      });
+      // username 입력 필드가 로드될 때까지 대기
+      await page.waitForSelector('input[name="username"]', { visible: true });
+      await page.waitForSelector('input[name="password"]', { visible: true });
 
-    // 로그인 정보 입력
-    const INSTAGRAM_USERNAME = 'ggh0223';
-    const INSTAGRAM_PASSWORD = 'rlarbgus1!';
+      // 로그인 정보 입력
+      const INSTAGRAM_USERNAME = 'ggh0223';
+      const INSTAGRAM_PASSWORD = 'rlarbgus1!';
 
-    await page.type('input[name="username"]', INSTAGRAM_USERNAME, {
-      delay: 100,
-    });
-    await page.type('input[name="password"]', INSTAGRAM_PASSWORD, {
-      delay: 100,
-    });
+      await page.type('input[name="username"]', INSTAGRAM_USERNAME, {
+        delay: 100,
+      });
+      await page.type('input[name="password"]', INSTAGRAM_PASSWORD, {
+        delay: 100,
+      });
 
-    // 로그인 버튼 클릭
-    await page.click('button[type="submit"]');
-    await page.waitForNavigation({ waitUntil: 'networkidle2' });
+      // 로그인 버튼 클릭
+      await page.click('button[type="submit"]');
+      await page.waitForNavigation({
+        waitUntil: 'networkidle2',
+        timeout: 60000,
+      });
 
-    // "로그인 정보를 저장하시겠어요?" 버튼의 선택자
-    const saveInfoButton = await page.evaluateHandle(() => {
-      const buttons = Array.from(document.querySelectorAll('button'));
-      return buttons.find((button) =>
-        button.textContent?.includes('정보 저장'),
-      );
-    });
-    console.log('saveInfoButton', saveInfoButton);
-    if (saveInfoButton) {
-      console.log('Save login info button found. Clicking...');
-      await saveInfoButton.click();
-      await page.waitForNavigation({ waitUntil: 'networkidle2' });
-    } else {
-      console.log('Save login info button not found. Skipping...');
+      // "로그인 정보를 저장하시겠어요?" 버튼의 선택자
+      const saveInfoButton = await page.evaluateHandle(() => {
+        const buttons = Array.from(document.querySelectorAll('button'));
+        return buttons.find((button) =>
+          button.textContent?.includes('정보 저장'),
+        );
+      });
+      console.log('saveInfoButton', saveInfoButton);
+      if (saveInfoButton) {
+        console.log('Save login info button found. Clicking...');
+        await saveInfoButton.click();
+        await page.waitForNavigation({ waitUntil: 'networkidle2' });
+      } else {
+        console.log('Save login info button not found. Skipping...');
+      }
+
+      // 로그인 후 크롤링할 페이지 열기
+      const profileUrl = `https://www.instagram.com/${target}`;
+      await page.goto(profileUrl, {
+        waitUntil: 'networkidle2',
+      });
+
+      // 게시글 이미지 URL 가져오기
+      const data = await page.evaluate(() => {
+        const images = Array.from(document.querySelectorAll('img'));
+        console.log(images);
+        return images
+          .map((img) => {
+            console.log(img);
+            return {
+              src: img.src,
+              alt: img.alt,
+            };
+          })
+          .filter((img) => img.src.startsWith('https://'));
+      });
+      console.log('Image URLs:', data);
+      return { data: data, error: null };
+    } catch (error) {
+      console.log(error);
+      return { data: null, error: error };
     }
-
-    // 로그인 후 크롤링할 페이지 열기
-    const profileUrl = `https://www.instagram.com/${target}`;
-    await page.goto(profileUrl, { waitUntil: 'networkidle2' });
-
-    // 게시글 이미지 URL 가져오기
-    const data = await page.evaluate(() => {
-      const images = Array.from(document.querySelectorAll('img'));
-      console.log(images);
-      return images
-        .map((img) => {
-          console.log(img);
-          return {
-            src: img.src,
-            alt: img.alt,
-          };
-        })
-        .filter((img) => img.src.startsWith('https://'));
-    });
-    console.log('Image URLs:', data);
-    return data;
   }
 
   async crollingKakao(browser) {

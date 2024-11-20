@@ -44,17 +44,24 @@ let MenuService = class MenuService {
                     crollingTarget.push(source);
                 }
             }
+            console.log('check', crollingTarget);
             if (crollingTarget.length > 0) {
                 const browser = await puppeteer.launch({ headless: true });
                 for (let i = 0; i < crollingTarget.length; i++) {
                     const domain = crollingTarget[i];
+                    console.log('domain', domain);
                     if (domain.includes('instagram')) {
                         const restaraunts = ['이가네', '더 식탁'];
                         const instagram = ['iganepork', 'the.siktak'];
                         const browser = await puppeteer.launch({ headless: true });
                         for (let i = 0; i < restaraunts.length - 1; i++) {
                             const res = restaraunts[i];
-                            const data = await this.crollingInsta(browser, res);
+                            console.log(i, res);
+                            const { data, error } = await this.crollingInsta(browser, res);
+                            if (error) {
+                                console.log(error);
+                                continue;
+                            }
                             const menu = {
                                 title: res,
                                 content: '',
@@ -82,52 +89,63 @@ let MenuService = class MenuService {
         }
     }
     async crollingInsta(browser, target) {
-        const page = await browser.newPage();
-        await page.goto('https://www.instagram.com/accounts/login/', {
-            waitUntil: 'networkidle2',
-        });
-        await page.waitForSelector('input[name="username"]', { visible: true });
-        await page.waitForSelector('input[name="password"]', { visible: true });
-        const INSTAGRAM_USERNAME = 'ggh0223';
-        const INSTAGRAM_PASSWORD = 'rlarbgus1!';
-        await page.type('input[name="username"]', INSTAGRAM_USERNAME, {
-            delay: 100,
-        });
-        await page.type('input[name="password"]', INSTAGRAM_PASSWORD, {
-            delay: 100,
-        });
-        await page.click('button[type="submit"]');
-        await page.waitForNavigation({ waitUntil: 'networkidle2' });
-        const saveInfoButton = await page.evaluateHandle(() => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            return buttons.find((button) => button.textContent?.includes('정보 저장'));
-        });
-        console.log('saveInfoButton', saveInfoButton);
-        if (saveInfoButton) {
-            console.log('Save login info button found. Clicking...');
-            await saveInfoButton.click();
-            await page.waitForNavigation({ waitUntil: 'networkidle2' });
+        try {
+            const page = await browser.newPage();
+            await page.goto('https://www.instagram.com/accounts/login/', {
+                waitUntil: 'networkidle2',
+            });
+            await page.waitForSelector('input[name="username"]', { visible: true });
+            await page.waitForSelector('input[name="password"]', { visible: true });
+            const INSTAGRAM_USERNAME = 'ggh0223';
+            const INSTAGRAM_PASSWORD = 'rlarbgus1!';
+            await page.type('input[name="username"]', INSTAGRAM_USERNAME, {
+                delay: 100,
+            });
+            await page.type('input[name="password"]', INSTAGRAM_PASSWORD, {
+                delay: 100,
+            });
+            await page.click('button[type="submit"]');
+            await page.waitForNavigation({
+                waitUntil: 'networkidle2',
+                timeout: 60000,
+            });
+            const saveInfoButton = await page.evaluateHandle(() => {
+                const buttons = Array.from(document.querySelectorAll('button'));
+                return buttons.find((button) => button.textContent?.includes('정보 저장'));
+            });
+            console.log('saveInfoButton', saveInfoButton);
+            if (saveInfoButton) {
+                console.log('Save login info button found. Clicking...');
+                await saveInfoButton.click();
+                await page.waitForNavigation({ waitUntil: 'networkidle2' });
+            }
+            else {
+                console.log('Save login info button not found. Skipping...');
+            }
+            const profileUrl = `https://www.instagram.com/${target}`;
+            await page.goto(profileUrl, {
+                waitUntil: 'networkidle2',
+            });
+            const data = await page.evaluate(() => {
+                const images = Array.from(document.querySelectorAll('img'));
+                console.log(images);
+                return images
+                    .map((img) => {
+                    console.log(img);
+                    return {
+                        src: img.src,
+                        alt: img.alt,
+                    };
+                })
+                    .filter((img) => img.src.startsWith('https://'));
+            });
+            console.log('Image URLs:', data);
+            return { data: data, error: null };
         }
-        else {
-            console.log('Save login info button not found. Skipping...');
+        catch (error) {
+            console.log(error);
+            return { data: null, error: error };
         }
-        const profileUrl = `https://www.instagram.com/${target}`;
-        await page.goto(profileUrl, { waitUntil: 'networkidle2' });
-        const data = await page.evaluate(() => {
-            const images = Array.from(document.querySelectorAll('img'));
-            console.log(images);
-            return images
-                .map((img) => {
-                console.log(img);
-                return {
-                    src: img.src,
-                    alt: img.alt,
-                };
-            })
-                .filter((img) => img.src.startsWith('https://'));
-        });
-        console.log('Image URLs:', data);
-        return data;
     }
     async crollingKakao(browser) {
         const page = await browser.newPage();
@@ -207,7 +225,7 @@ let MenuService = class MenuService {
 };
 exports.MenuService = MenuService;
 __decorate([
-    (0, schedule_1.Cron)('0 */5 10,11 * * 1-5'),
+    (0, schedule_1.Cron)('0 */2 10,11 * * 1-5'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
