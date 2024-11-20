@@ -16,7 +16,7 @@ export class MenuService {
     'https://www.instagram.com/the.siktak',
     'https://pf.kakao.com/_xgUVZn/posts',
   ];
-  @Cron('0 */2 10,11 * * 1-5')
+  @Cron('0 */5 10,11 * * 1-5')
   async handleCrolling() {
     const now = new Date();
     const hours = now.getHours();
@@ -57,6 +57,10 @@ export class MenuService {
                 console.log(error);
                 continue;
               }
+              if (data.length < 2) {
+                console.log(data);
+                continue;
+              }
               const menu = {
                 title: res,
                 content: '',
@@ -87,6 +91,12 @@ export class MenuService {
   async crollingInsta(browser, target) {
     try {
       const page = await browser.newPage();
+      // 페이지 내의 console.log를 Node.js 콘솔에 출력하도록 설정
+      page.on('console', (msg) => {
+        for (let i = 0; i < msg.args().length; ++i) {
+          console.log(`${i}: ${msg.args()[i]}`);
+        }
+      });
 
       await page.goto('https://www.instagram.com/accounts/login/', {
         waitUntil: 'networkidle2',
@@ -132,7 +142,7 @@ export class MenuService {
       // 로그인 후 크롤링할 페이지 열기
       const profileUrl = `https://www.instagram.com/${target}`;
       await page.goto(profileUrl, {
-        waitUntil: 'networkidle2',
+        waitUntil: 'domcontentloaded',
       });
 
       // 게시글 이미지 URL 가져오기

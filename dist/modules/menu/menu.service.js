@@ -62,6 +62,10 @@ let MenuService = class MenuService {
                                 console.log(error);
                                 continue;
                             }
+                            if (data.length < 2) {
+                                console.log(data);
+                                continue;
+                            }
                             const menu = {
                                 title: res,
                                 content: '',
@@ -91,6 +95,11 @@ let MenuService = class MenuService {
     async crollingInsta(browser, target) {
         try {
             const page = await browser.newPage();
+            page.on('console', (msg) => {
+                for (let i = 0; i < msg.args().length; ++i) {
+                    console.log(`${i}: ${msg.args()[i]}`);
+                }
+            });
             await page.goto('https://www.instagram.com/accounts/login/', {
                 waitUntil: 'networkidle2',
             });
@@ -124,7 +133,7 @@ let MenuService = class MenuService {
             }
             const profileUrl = `https://www.instagram.com/${target}`;
             await page.goto(profileUrl, {
-                waitUntil: 'networkidle2',
+                waitUntil: 'domcontentloaded',
             });
             const data = await page.evaluate(() => {
                 const images = Array.from(document.querySelectorAll('img'));
@@ -225,7 +234,7 @@ let MenuService = class MenuService {
 };
 exports.MenuService = MenuService;
 __decorate([
-    (0, schedule_1.Cron)('0 */2 10,11 * * 1-5'),
+    (0, schedule_1.Cron)('0 */5 10,11 * * 1-5'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
