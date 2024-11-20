@@ -4,14 +4,21 @@ export declare class MenuService {
     constructor(supabase: SupabaseClient);
     SOURCES: string[];
     handleCrolling(): Promise<void>;
-    crollingInsta(browser: any, target: any): Promise<{
+    instaLogin(page: any): Promise<void>;
+    crollingInsta(page: any, target: any): Promise<{
         data: any;
         error: any;
     } | {
         data: any;
         error: any;
     }>;
-    crollingKakao(browser: any): Promise<any>;
+    crollingKakao(page: any): Promise<{
+        data: any;
+        error: any;
+    } | {
+        data: any;
+        error: any;
+    }>;
     checkCrolling(source: any): Promise<void>;
     saveMenu(menu: any): Promise<any[]>;
     findAll(): Promise<any[]>;
