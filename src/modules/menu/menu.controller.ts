@@ -22,7 +22,12 @@ export class MenuController {
   ) {}
 
   @Get()
-  getMenu(@Req() req) {
+  getMenu() {
+    return this.menuService.findAll();
+  }
+
+  @Get('crolling')
+  startCrolling(@Req() req) {
     console.log(req.headers.get('Authorization'));
     if (
       req.headers.get('Authorization') !==
