@@ -23,9 +23,10 @@ export class MenuController {
 
   @Get()
   getMenu(@Req() req) {
+    console.log(req.headers.get('Authorization'));
     if (
       req.headers.get('Authorization') !==
-      `Bearer ${this.configService.get<string>('SUPABASE_URL')}`
+      `Bearer ${this.configService.get<string>('CRON_SECRET')}`
     ) {
       throw new UnauthorizedException('비인가 요청');
     }
