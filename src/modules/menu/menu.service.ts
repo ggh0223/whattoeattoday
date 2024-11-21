@@ -16,7 +16,7 @@ export class MenuService {
     'https://www.instagram.com/the.siktak',
     'https://pf.kakao.com/_xgUVZn/posts',
   ];
-  @Cron('0 */5 * * * 1-5')
+  //   @Cron('0 */5 * * * 1-5')
   async handleCrolling() {
     const now = new Date();
     const hours = now.getHours();
@@ -88,7 +88,7 @@ export class MenuService {
             const savedMenu = await this.saveMenu(menu);
             console.log('savedMenu', savedMenu);
           } catch (error) {
-            console.log('error in save menu');
+            console.log('error in save menu : ', error);
             continue;
           }
         }

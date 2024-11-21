@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MenuService = void 0;
 const common_1 = require("@nestjs/common");
 const supabase_js_1 = require("@supabase/supabase-js");
-const schedule_1 = require("@nestjs/schedule");
 const puppeteer = require("puppeteer");
 const moment = require("moment");
 let MenuService = class MenuService {
@@ -93,7 +92,7 @@ let MenuService = class MenuService {
                         console.log('savedMenu', savedMenu);
                     }
                     catch (error) {
-                        console.log('error in save menu');
+                        console.log('error in save menu : ', error);
                         continue;
                     }
                 }
@@ -259,12 +258,6 @@ let MenuService = class MenuService {
     }
 };
 exports.MenuService = MenuService;
-__decorate([
-    (0, schedule_1.Cron)('0 */5 * * * 1-5'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], MenuService.prototype, "handleCrolling", null);
 exports.MenuService = MenuService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('SUPABASE')),

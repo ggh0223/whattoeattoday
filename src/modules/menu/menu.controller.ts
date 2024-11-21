@@ -17,11 +17,6 @@ export class MenuController {
 
   @Get()
   getMenu() {
-    return this.menuService.findAll();
-  }
-
-  @Get(':source')
-  checkCrolling(@Param('source') source) {
-    return this.menuService.checkCrolling(source);
+    return this.menuService.handleCrolling();
   }
 }
