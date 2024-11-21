@@ -265,9 +265,18 @@ let MenuService = class MenuService {
         return data;
     }
     sendCrollingStstus(status) {
-        axios_1.default.post('https://whattoeattoday-server.vercel.app/api/menu/check/crolling', {
-            status: status,
-        });
+        try {
+            axios_1.default
+                .post('https://whattoeattoday-server.vercel.app/api/menu/check/crolling', {
+                status: status,
+            })
+                .catch((error) => {
+                console.log('errer');
+            });
+        }
+        catch (error) {
+            console.log('error');
+        }
     }
 };
 exports.MenuService = MenuService;

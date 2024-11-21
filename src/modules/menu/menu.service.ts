@@ -6,6 +6,7 @@ import axios from 'axios';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as puppeteer from 'puppeteer';
 import * as moment from 'moment';
+import { error } from 'console';
 
 @Injectable()
 export class MenuService {
@@ -289,11 +290,19 @@ export class MenuService {
   }
 
   sendCrollingStstus(status) {
-    axios.post(
-      'https://whattoeattoday-server.vercel.app/api/menu/check/crolling',
-      {
-        status: status,
-      },
-    );
+    try {
+      axios
+        .post(
+          'https://whattoeattoday-server.vercel.app/api/menu/check/crolling',
+          {
+            status: status,
+          },
+        )
+        .catch((error) => {
+          console.log('errer');
+        });
+    } catch (error) {
+      console.log('error');
+    }
   }
 }
