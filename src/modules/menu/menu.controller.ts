@@ -26,7 +26,7 @@ export class MenuController {
     return this.menuService.findAll();
   }
 
-  @Get('check/crolling')
+  @Post('check/crolling')
   checkCrolling(@Body() body) {
     console.log(body);
     return true;
