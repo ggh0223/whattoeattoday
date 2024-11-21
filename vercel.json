@@ -16,7 +16,7 @@
   "crons": [
     {
       "path": "/api/menu/crolling",
-      "schedule": "0 */5 * * * 1-5"
+      "schedule": "*/5 * * * 1-5"
     }
   ]
 }
