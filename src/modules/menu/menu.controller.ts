@@ -26,15 +26,21 @@ export class MenuController {
     return this.menuService.findAll();
   }
 
-  @Get('crolling')
-  startCrolling(@Req() req) {
-    console.log(req.headers['Authorization']);
-    if (
-      req.headers['Authorization'] !==
-      `Bearer ${this.configService.get<string>('CRON_SECRET')}`
-    ) {
-      throw new UnauthorizedException('비인가 요청');
-    }
-    return this.menuService.handleCrolling();
+  @Get('check/crolling')
+  checkCrolling(@Body() body) {
+    console.log(body);
+    return true;
   }
+
+  //   @Get('crolling')
+  //   startCrolling(@Req() req) {
+  //     console.log(req.headers['Authorization']);
+  //     if (
+  //       req.headers['Authorization'] !==
+  //       `Bearer ${this.configService.get<string>('CRON_SECRET')}`
+  //     ) {
+  //       throw new UnauthorizedException('비인가 요청');
+  //     }
+  //     return this.menuService.handleCrolling();
+  //   }
 }

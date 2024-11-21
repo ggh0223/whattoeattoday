@@ -16,7 +16,7 @@ export class MenuService {
     'https://www.instagram.com/the.siktak',
     'https://pf.kakao.com/_xgUVZn/posts',
   ];
-  //   @Cron('0 */5 * * * 1-5')
+  @Cron('0 */5 10,11 * * 1-5')
   async handleCrolling() {
     const now = new Date();
     const hours = now.getHours();
@@ -25,6 +25,9 @@ export class MenuService {
     if ((hours === 10 && minutes >= 30) || (hours === 11 && minutes <= 30)) {
       // Your logic to fetch data
       console.log('Fetching data...');
+      this.sendCrollingStstus(
+        `${moment().format('YYYY-MM-DD HH:mm:ss')} : start crolling`,
+      );
       const crollingTarget = [];
       // check data existing
       for (let i = 0; i < this.SOURCES.length; i++) {
@@ -37,6 +40,8 @@ export class MenuService {
         }
       }
       console.log('check', crollingTarget);
+      this.sendCrollingStstus(crollingTarget);
+
       if (crollingTarget.length > 0) {
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
@@ -65,6 +70,7 @@ export class MenuService {
             await this.instaLogin(page);
             isLogin = true;
           }
+          this.sendCrollingStstus(restaraunt);
 
           const { data, error } = await this[`crolling${type}`](
             page,
@@ -87,12 +93,16 @@ export class MenuService {
           try {
             const savedMenu = await this.saveMenu(menu);
             console.log('savedMenu', savedMenu);
+            this.sendCrollingStstus(savedMenu);
           } catch (error) {
             console.log('error in save menu : ', error);
+            this.sendCrollingStstus(error);
             continue;
           }
         }
-
+        this.sendCrollingStstus(
+          `${moment().format('YYYY-MM-DD HH:mm:ss')} : finish crolling`,
+        );
         await browser.close();
       } else {
         console.log('데이터 수집 완료');
@@ -276,5 +286,14 @@ export class MenuService {
       return null;
     }
     return data;
+  }
+
+  sendCrollingStstus(status) {
+    axios.post(
+      'https://whattoeattoday-server.vercel.app/api/menu/check/crolling',
+      {
+        status: status,
+      },
+    );
   }
 }

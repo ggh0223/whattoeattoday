@@ -24,13 +24,9 @@ let MenuController = class MenuController {
     getMenu() {
         return this.menuService.findAll();
     }
-    startCrolling(req) {
-        console.log(req.headers['Authorization']);
-        if (req.headers['Authorization'] !==
-            `Bearer ${this.configService.get('CRON_SECRET')}`) {
-            throw new common_1.UnauthorizedException('비인가 요청');
-        }
-        return this.menuService.handleCrolling();
+    checkCrolling(body) {
+        console.log(body);
+        return true;
     }
 };
 exports.MenuController = MenuController;
@@ -41,12 +37,12 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], MenuController.prototype, "getMenu", null);
 __decorate([
-    (0, common_1.Get)('crolling'),
-    __param(0, (0, common_1.Req)()),
+    (0, common_1.Get)('check/crolling'),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], MenuController.prototype, "startCrolling", null);
+], MenuController.prototype, "checkCrolling", null);
 exports.MenuController = MenuController = __decorate([
     (0, common_1.Controller)('menu'),
     __metadata("design:paramtypes", [menu_service_1.MenuService,

@@ -15,6 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MenuService = void 0;
 const common_1 = require("@nestjs/common");
 const supabase_js_1 = require("@supabase/supabase-js");
+const axios_1 = require("axios");
+const schedule_1 = require("@nestjs/schedule");
 const puppeteer = require("puppeteer");
 const moment = require("moment");
 let MenuService = class MenuService {
@@ -32,6 +34,7 @@ let MenuService = class MenuService {
         const minutes = now.getMinutes();
         if ((hours === 10 && minutes >= 30) || (hours === 11 && minutes <= 30)) {
             console.log('Fetching data...');
+            this.sendCrollingStstus(`${moment().format('YYYY-MM-DD HH:mm:ss')} : start crolling`);
             const crollingTarget = [];
             for (let i = 0; i < this.SOURCES.length; i++) {
                 const source = this.SOURCES[i];
@@ -44,6 +47,7 @@ let MenuService = class MenuService {
                 }
             }
             console.log('check', crollingTarget);
+            this.sendCrollingStstus(crollingTarget);
             if (crollingTarget.length > 0) {
                 const browser = await puppeteer.launch({ headless: true });
                 const page = await browser.newPage();
@@ -72,6 +76,7 @@ let MenuService = class MenuService {
                         await this.instaLogin(page);
                         isLogin = true;
                     }
+                    this.sendCrollingStstus(restaraunt);
                     const { data, error } = await this[`crolling${type}`](page, restaraunt);
                     if (error) {
                         console.log(error);
@@ -90,12 +95,15 @@ let MenuService = class MenuService {
                     try {
                         const savedMenu = await this.saveMenu(menu);
                         console.log('savedMenu', savedMenu);
+                        this.sendCrollingStstus(savedMenu);
                     }
                     catch (error) {
                         console.log('error in save menu : ', error);
+                        this.sendCrollingStstus(error);
                         continue;
                     }
                 }
+                this.sendCrollingStstus(`${moment().format('YYYY-MM-DD HH:mm:ss')} : finish crolling`);
                 await browser.close();
             }
             else {
@@ -256,8 +264,19 @@ let MenuService = class MenuService {
         }
         return data;
     }
+    sendCrollingStstus(status) {
+        axios_1.default.post('https://whattoeattoday-server.vercel.app/api/menu/check/crolling', {
+            status: status,
+        });
+    }
 };
 exports.MenuService = MenuService;
+__decorate([
+    (0, schedule_1.Cron)('0 */5 10,11 * * 1-5'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], MenuService.prototype, "handleCrolling", null);
 exports.MenuService = MenuService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('SUPABASE')),

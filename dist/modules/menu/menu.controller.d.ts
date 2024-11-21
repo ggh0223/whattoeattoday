@@ -5,5 +5,5 @@ export declare class MenuController {
     private readonly configService;
     constructor(menuService: MenuService, configService: ConfigService);
     getMenu(): Promise<any[]>;
-    startCrolling(req: any): Promise<void>;
+    checkCrolling(body: any): boolean;
 }

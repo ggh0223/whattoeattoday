@@ -23,4 +23,5 @@ export declare class MenuService {
     saveMenu(menu: any): Promise<any[]>;
     findAll(): Promise<any[]>;
     findBySource(source: any): Promise<any[]>;
+    sendCrollingStstus(status: any): void;
 }

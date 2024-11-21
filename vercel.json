@@ -12,11 +12,5 @@
       "dest": "dist/main.js",
       "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/menu/crolling",
-      "schedule": "*/5 10,11 * * 1-5"
-    }
   ]
 }
