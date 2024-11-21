@@ -28,7 +28,7 @@ export class MenuController {
 
   @Get('crolling')
   startCrolling(@Req() req) {
-    console.log(req.headers.get('Authorization!'));
+    console.log(req.headers.get('Authorization!!'));
     if (
       req.headers.get('Authorization') !==
       `Bearer ${this.configService.get<string>('CRON_SECRET')}`
