@@ -12,5 +12,11 @@
       "dest": "dist/main.js",
       "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/menu",
+      "schedule": "0 */5 * * * 1-5"
+    }
   ]
 }
