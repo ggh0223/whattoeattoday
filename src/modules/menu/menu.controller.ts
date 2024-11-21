@@ -28,9 +28,9 @@ export class MenuController {
 
   @Get('crolling')
   startCrolling(@Req() req) {
-    console.log(req.headers.get('Authorization!!'));
+    console.log(req.headers['Authorization']);
     if (
-      req.headers.get('Authorization') !==
+      req.headers['Authorization'] !==
       `Bearer ${this.configService.get<string>('CRON_SECRET')}`
     ) {
       throw new UnauthorizedException('비인가 요청');

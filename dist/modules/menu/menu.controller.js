@@ -25,8 +25,8 @@ let MenuController = class MenuController {
         return this.menuService.findAll();
     }
     startCrolling(req) {
-        console.log(req.headers.get('Authorization!!'));
-        if (req.headers.get('Authorization') !==
+        console.log(req.headers['Authorization']);
+        if (req.headers['Authorization'] !==
             `Bearer ${this.configService.get('CRON_SECRET')}`) {
             throw new common_1.UnauthorizedException('비인가 요청');
         }
