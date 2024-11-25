@@ -121,7 +121,7 @@ export class MenuService {
 
     // 로그인 정보 입력
     const INSTAGRAM_USERNAME = 'ggh0223';
-    const INSTAGRAM_PASSWORD = 'rlarbgus1!';
+    const INSTAGRAM_PASSWORD = 'Rlarbgus1!';
 
     await page.type('input[name="username"]', INSTAGRAM_USERNAME, {
       delay: 100,
