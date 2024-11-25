@@ -67,9 +67,24 @@ export class MenuService {
             type = 'Kakao';
           }
           console.log('login status', isLogin);
+          let retry = 3; // 재시도 횟수
           if (!isLogin) {
-            await this.instaLogin(page);
-            isLogin = true;
+            while (retry > 0) {
+              try {
+                await this.instaLogin(page); // 로그인 시도
+                isLogin = true; // 성공하면 isLogin 업데이트
+                break; // 성공 시 루프 종료
+              } catch (error) {
+                retry--; // 실패 시 재시도 횟수 감소
+                console.error(`로그인 시도 실패, 남은 횟수: ${retry}`, error);
+                if (retry === 0) {
+                  this.sendCrollingStstus(
+                    '로그인 시도 실패: 최대 재시도 횟수를 초과했습니다.',
+                  );
+                  continue;
+                }
+              }
+            }
           }
           this.sendCrollingStstus(restaraunt);
 
