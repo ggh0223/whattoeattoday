@@ -72,9 +72,23 @@ let MenuService = class MenuService {
                         type = 'Kakao';
                     }
                     console.log('login status', isLogin);
+                    let retry = 3;
                     if (!isLogin) {
-                        await this.instaLogin(page);
-                        isLogin = true;
+                        while (retry > 0) {
+                            try {
+                                await this.instaLogin(page);
+                                isLogin = true;
+                                break;
+                            }
+                            catch (error) {
+                                retry--;
+                                console.error(`로그인 시도 실패, 남은 횟수: ${retry}`, error);
+                                if (retry === 0) {
+                                    this.sendCrollingStstus('로그인 시도 실패: 최대 재시도 횟수를 초과했습니다.');
+                                    continue;
+                                }
+                            }
+                        }
                     }
                     this.sendCrollingStstus(restaraunt);
                     const { data, error } = await this[`crolling${type}`](page, restaraunt);
@@ -118,7 +132,7 @@ let MenuService = class MenuService {
         await page.waitForSelector('input[name="username"]', { visible: true });
         await page.waitForSelector('input[name="password"]', { visible: true });
         const INSTAGRAM_USERNAME = 'ggh0223';
-        const INSTAGRAM_PASSWORD = 'rlarbgus1!';
+        const INSTAGRAM_PASSWORD = 'Rlarbgus1!';
         await page.type('input[name="username"]', INSTAGRAM_USERNAME, {
             delay: 100,
         });
@@ -161,7 +175,7 @@ let MenuService = class MenuService {
                         alt: img.alt,
                     };
                 })
-                    .filter((img) => img.src.startsWith('https://'));
+                    .filter((img) => img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com'));
             });
             console.log('Image URLs:', data);
             if (Array.isArray(data) && data.length < 2) {

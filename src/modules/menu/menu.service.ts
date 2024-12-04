@@ -189,7 +189,9 @@ export class MenuService {
               alt: img.alt,
             };
           })
-          .filter((img) => img.src.startsWith('https://'));
+          .filter((img) =>
+            img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com'),
+          );
       });
       console.log('Image URLs:', data);
       if (Array.isArray(data) && data.length < 2) {
