@@ -17,13 +17,18 @@ export class MenuService {
     'https://www.instagram.com/the.siktak',
     'https://pf.kakao.com/_xgUVZn/posts',
   ];
-  @Cron('0 */5 10,11 * * 1-5')
+  //   @Cron('0 */5 10,11 * * 1-5')
+  @Cron('0 */1 * * * 1-5')
   async handleCrolling() {
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
 
-    if ((hours === 10 && minutes >= 30) || (hours === 11 && minutes <= 30)) {
+    if (
+      true ||
+      (hours === 10 && minutes >= 30) ||
+      (hours === 11 && minutes <= 30)
+    ) {
       // Your logic to fetch data
       console.log('Fetching data...');
       this.sendCrollingStstus(
@@ -178,10 +183,11 @@ export class MenuService {
       });
 
       // 게시글 이미지 URL 가져오기
-      const data = await page.evaluate(() => {
+      const data = await page.evaluate((target) => {
         const images = Array.from(document.querySelectorAll('img'));
-        const regex =
+        const regex1 =
           /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판 및 텍스트의 이미지일 수 있음\.$/;
+
         return images
           .map((img) => {
             return {
@@ -189,21 +195,18 @@ export class MenuService {
               alt: img.alt,
             };
           })
-          .filter((img) => {
-            let isMenuImage = img.src.startsWith(
-              'https://scontent-ssn1-1.cdninstagram.com',
-            );
-            if (target === 'iganepork') {
-              isMenuImage = regex.test(img.alt);
-            }
-            return isMenuImage;
-          });
+          .filter(
+            (img) =>
+              img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com') &&
+              (regex1.test(img.alt) ||
+                img.alt.includes('더식탁_유타워한식뷔페')),
+          );
       });
       console.log('Image URLs:', data);
       if (Array.isArray(data) && data.length < 2) {
         throw new Error('이미지를 가져오는데 실패했습니다.');
       }
-      return { data: data[1].src, error: null };
+      return { data: data[0].src, error: null };
     } catch (error) {
       console.log(error);
       return { data: null, error: error };
