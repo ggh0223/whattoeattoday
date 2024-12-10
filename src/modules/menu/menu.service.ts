@@ -181,6 +181,8 @@ export class MenuService {
       const data = await page.evaluate(() => {
         const images = Array.from(document.querySelectorAll('img'));
         console.log(images);
+        const regex =
+          /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판 및 텍스트의 이미지일 수 있음\.$/;
         return images
           .map((img) => {
             console.log(img);
@@ -189,9 +191,15 @@ export class MenuService {
               alt: img.alt,
             };
           })
-          .filter((img) =>
-            img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com'),
-          );
+          .filter((img) => {
+            let isMenuImage = img.src.startsWith(
+              'https://scontent-ssn1-1.cdninstagram.com',
+            );
+            if (target === 'iganepork') {
+              isMenuImage = regex.test(img.alt);
+            }
+            return isMenuImage;
+          });
       });
       console.log('Image URLs:', data);
       if (Array.isArray(data) && data.length < 2) {
