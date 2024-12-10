@@ -166,16 +166,21 @@ let MenuService = class MenuService {
             });
             const data = await page.evaluate(() => {
                 const images = Array.from(document.querySelectorAll('img'));
-                console.log(images);
+                const regex = /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판 및 텍스트의 이미지일 수 있음\.$/;
                 return images
                     .map((img) => {
-                    console.log(img);
                     return {
                         src: img.src,
                         alt: img.alt,
                     };
                 })
-                    .filter((img) => img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com'));
+                    .filter((img) => {
+                    let isMenuImage = img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com');
+                    if (target === 'iganepork') {
+                        isMenuImage = regex.test(img.alt);
+                    }
+                    return isMenuImage;
+                });
             });
             console.log('Image URLs:', data);
             if (Array.isArray(data) && data.length < 2) {
@@ -202,7 +207,7 @@ let MenuService = class MenuService {
                 }
                 return null;
             });
-            console.log('Image URL:', imageUrl);
+            console.log('Image URLs:', imageUrl);
             return { data: imageUrl, error: null };
         }
         catch (error) {
@@ -233,12 +238,10 @@ let MenuService = class MenuService {
     }
     async saveMenu(menu) {
         const url = menu.imageUrl.split('?')[0];
-        console.log(url);
         const { data: existingData, error: existingError } = await this.supabase
             .from('menus')
             .select('id')
             .like('imageUrl', `%${url}%`);
-        console.log(existingData);
         if (existingError) {
             throw new Error(existingError.message);
         }
@@ -249,7 +252,6 @@ let MenuService = class MenuService {
             .from('menus')
             .insert([menu])
             .select();
-        console.log(data, error);
         if (error) {
             throw new Error(error.message);
         }

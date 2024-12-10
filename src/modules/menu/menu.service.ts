@@ -180,12 +180,10 @@ export class MenuService {
       // 게시글 이미지 URL 가져오기
       const data = await page.evaluate(() => {
         const images = Array.from(document.querySelectorAll('img'));
-        console.log(images);
         const regex =
           /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판 및 텍스트의 이미지일 수 있음\.$/;
         return images
           .map((img) => {
-            console.log(img);
             return {
               src: img.src,
               alt: img.alt,
@@ -231,7 +229,7 @@ export class MenuService {
         return null;
       });
 
-      console.log('Image URL:', imageUrl);
+      console.log('Image URLs:', imageUrl);
 
       return { data: imageUrl, error: null };
     } catch (error) {
@@ -265,12 +263,10 @@ export class MenuService {
 
   async saveMenu(menu) {
     const url = menu.imageUrl.split('?')[0];
-    console.log(url);
     const { data: existingData, error: existingError } = await this.supabase
       .from('menus')
       .select('id')
       .like('imageUrl', `%${url}%`);
-    console.log(existingData);
     if (existingError) {
       throw new Error(existingError.message);
     }
@@ -283,7 +279,7 @@ export class MenuService {
       .from('menus')
       .insert([menu])
       .select();
-    console.log(data, error);
+
     if (error) {
       throw new Error(error.message);
     }
