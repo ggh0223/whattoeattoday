@@ -24,11 +24,7 @@ export class MenuService {
     const hours = now.getHours();
     const minutes = now.getMinutes();
 
-    if (
-      true ||
-      (hours === 10 && minutes >= 30) ||
-      (hours === 11 && minutes <= 30)
-    ) {
+    if ((hours === 10 && minutes >= 30) || (hours === 11 && minutes <= 30)) {
       // Your logic to fetch data
       console.log('Fetching data...');
       this.sendCrollingStstus(
@@ -115,6 +111,7 @@ export class MenuService {
             const savedMenu = await this.saveMenu(menu);
             console.log('savedMenu', savedMenu);
             this.sendCrollingStstus(savedMenu);
+            isLogin = true; // 성공하면 isLogin 업데이트
           } catch (error) {
             console.log('error in save menu : ', error);
             this.sendCrollingStstus(error);
