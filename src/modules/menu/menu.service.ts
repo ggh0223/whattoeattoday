@@ -47,9 +47,7 @@ export class MenuService {
       if (crollingTarget.length > 0) {
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
-        page.on('console', (msg) => {
-          console.log(`BROWSER LOG [${msg.type()}]: ${msg.text()}`);
-        });
+
         let isLogin = false;
 
         for (let i = 0; i < crollingTarget.length; i++) {
@@ -185,28 +183,27 @@ export class MenuService {
       // 게시글 이미지 URL 가져오기
       const data = await page.evaluate((target) => {
         const images = Array.from(document.querySelectorAll('img'));
-        const regex1 =
-          /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판 및 텍스트의 이미지일 수 있음\.$/;
-        console.log(images);
-        return images
-          .map((img) => {
-            return {
-              src: img.src,
-              alt: img.alt,
-            };
-          })
-          .filter(
-            (img) =>
-              img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com') &&
-              (regex1.test(img.alt) ||
-                img.alt.includes('더식탁_유타워한식뷔페')),
-          );
+        return images.map((img) => {
+          return {
+            src: img.src,
+            alt: img.alt,
+          };
+        });
       });
-      console.log('Image URLs:', data);
-      if (Array.isArray(data) && data.length < 2) {
+      console.log('원본 이미지 리스트 :', data);
+
+      const regex1 =
+        /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판 및 텍스트의 이미지일 수 있음\.$/;
+      const filteringData = data.filter(
+        (img) =>
+          img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com') &&
+          (regex1.test(img.alt) || img.alt.includes('더식탁_유타워한식뷔페')),
+      );
+      console.log('필터링 이미지 리스트 :', filteringData);
+      if (Array.isArray(filteringData) && filteringData.length < 2) {
         throw new Error('이미지를 가져오는데 실패했습니다.');
       }
-      return { data: data[0].src, error: null };
+      return { data: filteringData[0].src, error: null };
     } catch (error) {
       console.log(error);
       return { data: null, error: error };
