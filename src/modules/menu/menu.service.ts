@@ -187,6 +187,7 @@ export class MenuService {
 
         return images
           .map((img) => {
+            console.log(img);
             return {
               src: img.src,
               alt: img.alt,
