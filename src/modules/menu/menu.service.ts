@@ -184,10 +184,9 @@ export class MenuService {
         const images = Array.from(document.querySelectorAll('img'));
         const regex1 =
           /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판 및 텍스트의 이미지일 수 있음\.$/;
-
+        console.log(images);
         return images
           .map((img) => {
-            console.log(img);
             return {
               src: img.src,
               alt: img.alt,
