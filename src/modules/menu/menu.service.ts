@@ -47,6 +47,9 @@ export class MenuService {
       if (crollingTarget.length > 0) {
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
+        page.on('console', (msg) => {
+          console.log(`BROWSER LOG [${msg.type()}]: ${msg.text()}`);
+        });
         let isLogin = false;
 
         for (let i = 0; i < crollingTarget.length; i++) {
