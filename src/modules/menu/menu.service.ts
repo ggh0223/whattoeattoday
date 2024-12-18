@@ -192,8 +192,7 @@ export class MenuService {
       });
       console.log('원본 이미지 리스트 :', data);
 
-      const regex1 =
-        /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판 및 텍스트의 이미지일 수 있음\.$/;
+      const regex1 = /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판/;
       const filteringData = data.filter(
         (img) =>
           img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com') &&
