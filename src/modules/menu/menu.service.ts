@@ -17,8 +17,8 @@ export class MenuService {
     'https://www.instagram.com/the.siktak',
     'https://pf.kakao.com/_xgUVZn/posts',
   ];
-  @Cron('0 */5 10,11 * * 1-5')
-  //   @Cron('0 */1 * * * 1-5')
+  //   @Cron('0 */5 10,11 * * 1-5')
+  @Cron('0 */1 * * * 1-5')
   async handleCrolling() {
     const now = new Date();
     const hours = now.getHours();
@@ -133,6 +133,19 @@ export class MenuService {
     await page.goto('https://www.instagram.com/accounts/login/', {
       waitUntil: 'networkidle2',
     });
+
+    // 이미 로그인 상태인지 확인
+    const isLoggedIn = await page.evaluate(() => {
+      return !!document.querySelector('nav img[alt*="프로필"]');
+    });
+
+    if (isLoggedIn) {
+      console.log('Already logged in. Navigating to profile page...');
+      return; // 로그인 절차를 건너뜀
+    }
+
+    console.log('Not logged in. Proceeding with login process...');
+
     // username 입력 필드가 로드될 때까지 대기
     await page.waitForSelector('input[name="username"]', { visible: true });
     await page.waitForSelector('input[name="password"]', { visible: true });
@@ -142,34 +155,44 @@ export class MenuService {
     const INSTAGRAM_PASSWORD = 'Rlarbgus1!';
 
     await page.type('input[name="username"]', INSTAGRAM_USERNAME, {
-      delay: 100,
+      delay: 50,
     });
     await page.type('input[name="password"]', INSTAGRAM_PASSWORD, {
-      delay: 100,
+      delay: 50,
     });
 
     // 로그인 버튼 클릭
     await page.click('button[type="submit"]');
-    await page.waitForNavigation({
-      waitUntil: 'networkidle2',
-      timeout: 60000,
-    });
+    // 탐색 완료까지 대기
+    try {
+      await page.waitForNavigation({
+        waitUntil: 'networkidle2',
+        timeout: 60000,
+      });
+    } catch (error) {
+      console.warn('Navigation timeout. Proceeding anyway...');
+    }
 
     // "로그인 정보를 저장하시겠어요?" 버튼의 선택자
-    const saveInfoButton = await page.evaluateHandle(() => {
+    // "로그인 정보를 저장하시겠어요?" 버튼 대기 및 클릭
+    const saveInfoButton = await page.evaluate(() => {
       const buttons = Array.from(document.querySelectorAll('button'));
-      return buttons.find((button) =>
-        button.textContent?.includes('정보 저장'),
-      );
+      return buttons.find((button) => button.textContent.includes('정보 저장'));
     });
-    console.log('saveInfoButton', saveInfoButton);
+
     if (saveInfoButton) {
       console.log('Save login info button found. Clicking...');
       await saveInfoButton.click();
-      await page.waitForNavigation({ waitUntil: 'networkidle2' });
+      try {
+        await page.waitForNavigation({ waitUntil: 'networkidle2' });
+      } catch (error) {
+        console.warn('Navigation timeout after saving login info.');
+      }
     } else {
       console.log('Save login info button not found. Skipping...');
     }
+
+    console.log('Login completed!');
   }
 
   async crollingInsta(page, target) {
