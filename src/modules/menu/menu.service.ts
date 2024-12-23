@@ -17,8 +17,8 @@ export class MenuService {
     'https://www.instagram.com/the.siktak',
     'https://pf.kakao.com/_xgUVZn/posts',
   ];
-  //   @Cron('0 */5 10,11 * * 1-5')
-  @Cron('0 */1 * * * 1-5')
+  @Cron('0 */5 10,11 * * 1-5')
+  //   @Cron('0 */1 * * * 1-5')
   async handleCrolling() {
     const now = new Date();
     const hours = now.getHours();
