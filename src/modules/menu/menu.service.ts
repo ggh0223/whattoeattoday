@@ -135,7 +135,7 @@ export class MenuService {
 
   async instaLogin(page) {
     await page.goto('https://www.instagram.com/accounts/login/', {
-      waitUntil: 'networkidle2',
+      waitUntil: 'domcontentloaded',
     });
 
     // 이미 로그인 상태인지 확인
