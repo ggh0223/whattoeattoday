@@ -138,6 +138,7 @@ export class MenuService {
   async instaLogin(page) {
     await page.goto('https://www.instagram.com/accounts/login/', {
       waitUntil: 'domcontentloaded',
+      timeout: 60000, // 타임아웃을 늘림
     });
 
     // 이미 로그인 상태인지 확인
