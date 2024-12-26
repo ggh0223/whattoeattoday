@@ -24,7 +24,11 @@ export class MenuService {
     const hours = now.getHours();
     const minutes = now.getMinutes();
 
-    if ((hours === 10 && minutes >= 30) || (hours === 11 && minutes <= 30)) {
+    if (
+      true ||
+      (hours === 10 && minutes >= 30) ||
+      (hours === 11 && minutes <= 30)
+    ) {
       // Your logic to fetch data
       console.log('Fetching data...');
       this.sendCrollingStstus(
