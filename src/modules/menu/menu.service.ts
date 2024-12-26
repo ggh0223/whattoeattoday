@@ -4,9 +4,11 @@ import { UpdateMenuDto } from './dto/update-menu.dto';
 import { SupabaseClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import * as puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
 import * as moment from 'moment';
 import { error } from 'console';
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
 
 @Injectable()
 export class MenuService {
