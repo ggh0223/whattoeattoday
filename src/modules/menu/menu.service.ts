@@ -19,18 +19,14 @@ export class MenuService {
     'https://www.instagram.com/the.siktak',
     'https://pf.kakao.com/_xgUVZn/posts',
   ];
-  @Cron('0 */5 * * * 1-5')
+  @Cron('0 */5 10,11* * * 1-5')
   //   @Cron('0 */1 * * * 1-5')
   async handleCrolling() {
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
 
-    if (
-      true ||
-      (hours === 10 && minutes >= 30) ||
-      (hours === 11 && minutes <= 30)
-    ) {
+    if ((hours === 10 && minutes >= 30) || (hours === 11 && minutes <= 30)) {
       // Your logic to fetch data
       console.log('Fetching data...');
       this.sendCrollingStstus(
@@ -54,19 +50,6 @@ export class MenuService {
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
 
-        page.on('response', (response) => {
-          console.log(`Response from ${response.url()}: ${response.status()}`);
-        });
-
-        page.on('requestfailed', (request) => {
-          console.error(
-            `Request failed: ${request.url()} (${request.failure().errorText})`,
-          );
-        });
-
-        await page.setUserAgent(
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        );
         let isLogin = false;
 
         for (let i = 0; i < crollingTarget.length; i++) {
@@ -153,7 +136,9 @@ export class MenuService {
       waitUntil: 'networkidle2',
       timeout: 60000, // 타임아웃을 늘림
     });
-
+    // console.log(await page.content());
+    return await page.content();
+    /*
     // 이미 로그인 상태인지 확인
     const isLoggedIn = await page.evaluate(() => {
       return !!document.querySelector('nav img[alt*="프로필"]');
@@ -192,7 +177,7 @@ export class MenuService {
     } catch (error) {
       console.warn('Navigation timeout. Proceeding anyway...');
     }
-
+    console.log(await page.content());
     // "로그인 정보를 저장하시겠어요?" 버튼의 선택자
     // "로그인 정보를 저장하시겠어요?" 버튼 대기 및 클릭
     const saveInfoButton = await page.evaluate(() => {
@@ -213,6 +198,7 @@ export class MenuService {
     }
 
     console.log('Login completed!');
+     */
   }
 
   async crollingInsta(page, target) {

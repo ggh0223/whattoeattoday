@@ -14,6 +14,15 @@ import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
 import { ConfigService } from '@nestjs/config';
 
+import { SupabaseClient } from '@supabase/supabase-js';
+import axios from 'axios';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import puppeteer from 'puppeteer-extra';
+import * as moment from 'moment';
+import { error } from 'console';
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
+
 @Controller('menu')
 export class MenuController {
   constructor(
@@ -32,15 +41,11 @@ export class MenuController {
     return true;
   }
 
-  //   @Get('crolling')
-  //   startCrolling(@Req() req) {
-  //     console.log(req.headers['Authorization']);
-  //     if (
-  //       req.headers['Authorization'] !==
-  //       `Bearer ${this.configService.get<string>('CRON_SECRET')}`
-  //     ) {
-  //       throw new UnauthorizedException('비인가 요청');
-  //     }
-  //     return this.menuService.handleCrolling();
-  //   }
+  @Get('test')
+  async startCrolling(@Req() req) {
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+
+    return this.menuService.instaLogin(page);
+  }
 }
