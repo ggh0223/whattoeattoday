@@ -78,10 +78,10 @@ export class MenuService {
                 break; // 성공 시 루프 종료
               } catch (error) {
                 retry--; // 실패 시 재시도 횟수 감소
-                console.error(`로그인 시도 실패, 남은 횟수: ${retry}`, error);
+                console.error(`로그인 실패, 남은 횟수: ${retry}`, error);
                 if (retry === 0) {
                   this.sendCrollingStstus(
-                    '로그인 시도 실패: 최대 재시도 횟수를 초과했습니다.',
+                    '로그인 실패: 최대 재시도 횟수를 초과했습니다.',
                   );
                   continue;
                 }
