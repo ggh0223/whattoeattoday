@@ -6,4 +6,5 @@ export declare class MenuController {
     constructor(menuService: MenuService, configService: ConfigService);
     getMenu(): Promise<any[]>;
     checkCrolling(body: any): boolean;
+    startCrolling(): Promise<boolean>;
 }

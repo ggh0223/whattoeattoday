@@ -16,9 +16,10 @@ exports.MenuService = void 0;
 const common_1 = require("@nestjs/common");
 const supabase_js_1 = require("@supabase/supabase-js");
 const axios_1 = require("axios");
-const schedule_1 = require("@nestjs/schedule");
-const puppeteer = require("puppeteer");
+const puppeteer_extra_1 = require("puppeteer-extra");
 const moment = require("moment");
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer_extra_1.default.use(StealthPlugin());
 let MenuService = class MenuService {
     constructor(supabase) {
         this.supabase = supabase;
@@ -34,7 +35,7 @@ let MenuService = class MenuService {
         const minutes = now.getMinutes();
         if ((hours === 10 && minutes >= 30) || (hours === 11 && minutes <= 30)) {
             console.log('Fetching data...');
-            this.sendCrollingStstus(`${moment().format('YYYY-MM-DD HH:mm:ss')} : start crolling`);
+            this.sendCrollingStstus(`${moment().format('YYYY-MM-DD HH:mm:ss')} : start crolldjing`);
             const crollingTarget = [];
             for (let i = 0; i < this.SOURCES.length; i++) {
                 const source = this.SOURCES[i];
@@ -49,7 +50,7 @@ let MenuService = class MenuService {
             console.log('check', crollingTarget);
             this.sendCrollingStstus(crollingTarget);
             if (crollingTarget.length > 0) {
-                const browser = await puppeteer.launch({ headless: true });
+                const browser = await puppeteer_extra_1.default.launch({ headless: true });
                 const page = await browser.newPage();
                 let isLogin = false;
                 for (let i = 0; i < crollingTarget.length; i++) {
@@ -82,9 +83,9 @@ let MenuService = class MenuService {
                             }
                             catch (error) {
                                 retry--;
-                                console.error(`로그인 시도 실패, 남은 횟수: ${retry}`, error);
+                                console.error(`로그인 실패, 남은 횟수: ${retry}`, error);
                                 if (retry === 0) {
-                                    this.sendCrollingStstus('로그인 시도 실패: 최대 재시도 횟수를 초과했습니다.');
+                                    this.sendCrollingStstus('로그인 실패: 최대 재시도 횟수를 초과했습니다.');
                                     continue;
                                 }
                             }
@@ -110,6 +111,7 @@ let MenuService = class MenuService {
                         const savedMenu = await this.saveMenu(menu);
                         console.log('savedMenu', savedMenu);
                         this.sendCrollingStstus(savedMenu);
+                        isLogin = true;
                     }
                     catch (error) {
                         console.log('error in save menu : ', error);
@@ -128,35 +130,54 @@ let MenuService = class MenuService {
     async instaLogin(page) {
         await page.goto('https://www.instagram.com/accounts/login/', {
             waitUntil: 'networkidle2',
+            timeout: 60000,
         });
+        const isLoggedIn = await page.evaluate(() => {
+            return !!document.querySelector('nav img[alt*="프로필"]');
+        });
+        if (isLoggedIn) {
+            console.log('Already logged in. Navigating to profile page...');
+            return;
+        }
+        console.log('Not logged in. Proceeding with login process...');
         await page.waitForSelector('input[name="username"]', { visible: true });
         await page.waitForSelector('input[name="password"]', { visible: true });
         const INSTAGRAM_USERNAME = 'ggh0223';
         const INSTAGRAM_PASSWORD = 'Rlarbgus1!';
         await page.type('input[name="username"]', INSTAGRAM_USERNAME, {
-            delay: 100,
+            delay: 50,
         });
         await page.type('input[name="password"]', INSTAGRAM_PASSWORD, {
-            delay: 100,
+            delay: 50,
         });
         await page.click('button[type="submit"]');
-        await page.waitForNavigation({
-            waitUntil: 'networkidle2',
-            timeout: 60000,
-        });
-        const saveInfoButton = await page.evaluateHandle(() => {
+        try {
+            await page.waitForNavigation({
+                waitUntil: 'networkidle2',
+                timeout: 60000,
+            });
+        }
+        catch (error) {
+            console.warn('Navigation timeout. Proceeding anyway...');
+        }
+        const saveInfoButton = await page.evaluate(() => {
             const buttons = Array.from(document.querySelectorAll('button'));
-            return buttons.find((button) => button.textContent?.includes('정보 저장'));
+            return buttons.find((button) => button.textContent.includes('정보 저장'));
         });
-        console.log('saveInfoButton', saveInfoButton);
         if (saveInfoButton) {
             console.log('Save login info button found. Clicking...');
             await saveInfoButton.click();
-            await page.waitForNavigation({ waitUntil: 'networkidle2' });
+            try {
+                await page.waitForNavigation({ waitUntil: 'networkidle2' });
+            }
+            catch (error) {
+                console.warn('Navigation timeout after saving login info.');
+            }
         }
         else {
             console.log('Save login info button not found. Skipping...');
         }
+        console.log('Login completed!');
     }
     async crollingInsta(page, target) {
         try {
@@ -164,29 +185,24 @@ let MenuService = class MenuService {
             await page.goto(profileUrl, {
                 waitUntil: 'networkidle2',
             });
-            const data = await page.evaluate(() => {
+            const data = await page.evaluate((target) => {
                 const images = Array.from(document.querySelectorAll('img'));
-                const regex = /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판 및 텍스트의 이미지일 수 있음\.$/;
-                return images
-                    .map((img) => {
+                return images.map((img) => {
                     return {
                         src: img.src,
                         alt: img.alt,
                     };
-                })
-                    .filter((img) => {
-                    let isMenuImage = img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com');
-                    if (target === 'iganepork') {
-                        isMenuImage = regex.test(img.alt);
-                    }
-                    return isMenuImage;
                 });
             });
-            console.log('Image URLs:', data);
-            if (Array.isArray(data) && data.length < 2) {
+            console.log('원본 이미지 리스트 :', data);
+            const regex1 = /^Photo by 이가네흑돼지 on [A-Za-z]+ \d{2}, \d{4}\. 간판/;
+            const filteringData = data.filter((img) => img.src.startsWith('https://scontent-ssn1-1.cdninstagram.com') &&
+                (regex1.test(img.alt) || img.alt.includes('더식탁_유타워한식뷔페')));
+            console.log('필터링 이미지 리스트 :', filteringData);
+            if (Array.isArray(filteringData) && filteringData.length < 2) {
                 throw new Error('이미지를 가져오는데 실패했습니다.');
             }
-            return { data: data[1].src, error: null };
+            return { data: filteringData[0].src, error: null };
         }
         catch (error) {
             console.log(error);
@@ -216,7 +232,7 @@ let MenuService = class MenuService {
         }
     }
     async checkCrolling(source) {
-        const browser = await puppeteer.launch({ headless: true });
+        const browser = await puppeteer_extra_1.default.launch({ headless: true });
         const { data, error } = await this.crollingInsta(browser, source);
         if (error) {
             console.log(error);
@@ -296,12 +312,6 @@ let MenuService = class MenuService {
     }
 };
 exports.MenuService = MenuService;
-__decorate([
-    (0, schedule_1.Cron)('0 */5 10,11 * * 1-5'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], MenuService.prototype, "handleCrolling", null);
 exports.MenuService = MenuService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('SUPABASE')),

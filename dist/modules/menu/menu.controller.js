@@ -16,6 +16,9 @@ exports.MenuController = void 0;
 const common_1 = require("@nestjs/common");
 const menu_service_1 = require("./menu.service");
 const config_1 = require("@nestjs/config");
+const puppeteer_extra_1 = require("puppeteer-extra");
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer_extra_1.default.use(StealthPlugin());
 let MenuController = class MenuController {
     constructor(menuService, configService) {
         this.menuService = menuService;
@@ -26,6 +29,10 @@ let MenuController = class MenuController {
     }
     checkCrolling(body) {
         console.log(body);
+        return true;
+    }
+    async startCrolling() {
+        await this.menuService.handleCrolling();
         return true;
     }
 };
@@ -43,6 +50,12 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], MenuController.prototype, "checkCrolling", null);
+__decorate([
+    (0, common_1.Get)('crolling'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], MenuController.prototype, "startCrolling", null);
 exports.MenuController = MenuController = __decorate([
     (0, common_1.Controller)('menu'),
     __metadata("design:paramtypes", [menu_service_1.MenuService,

@@ -19,7 +19,7 @@ export class MenuService {
     'https://www.instagram.com/the.siktak',
     'https://pf.kakao.com/_xgUVZn/posts',
   ];
-  @Cron('0 */5 10,11 * * 1-5')
+  //   @Cron('0 */5 10,11 * * 1-5')
   //   @Cron('0 */1 * * * 1-5')
   async handleCrolling() {
     const now = new Date();
@@ -30,7 +30,7 @@ export class MenuService {
       // Your logic to fetch data
       console.log('Fetching data...');
       this.sendCrollingStstus(
-        `${moment().format('YYYY-MM-DD HH:mm:ss')} : start crolling`,
+        `${moment().format('YYYY-MM-DD HH:mm:ss')} : start crolldjing`,
       );
       const crollingTarget = [];
       // check data existing
@@ -136,9 +136,9 @@ export class MenuService {
       waitUntil: 'networkidle2',
       timeout: 60000, // 타임아웃을 늘림
     });
-    // console.log(await page.content());
-    return await page.content();
-    /*
+    // // console.log(await page.content());
+    // return await page.content();
+
     // 이미 로그인 상태인지 확인
     const isLoggedIn = await page.evaluate(() => {
       return !!document.querySelector('nav img[alt*="프로필"]');
@@ -177,7 +177,7 @@ export class MenuService {
     } catch (error) {
       console.warn('Navigation timeout. Proceeding anyway...');
     }
-    console.log(await page.content());
+
     // "로그인 정보를 저장하시겠어요?" 버튼의 선택자
     // "로그인 정보를 저장하시겠어요?" 버튼 대기 및 클릭
     const saveInfoButton = await page.evaluate(() => {
@@ -198,7 +198,6 @@ export class MenuService {
     }
 
     console.log('Login completed!');
-     */
   }
 
   async crollingInsta(page, target) {

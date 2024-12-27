@@ -41,11 +41,17 @@ export class MenuController {
     return true;
   }
 
-  @Get('test')
-  async startCrolling(@Req() req) {
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
-
-    return this.menuService.instaLogin(page);
+  @Get('crolling')
+  async startCrolling() {
+    await this.menuService.handleCrolling();
+    return true;
   }
+
+  //   @Get('test')
+  //   async startCrolling(@Req() req) {
+  //     const browser = await puppeteer.launch({ headless: true });
+  //     const page = await browser.newPage();
+
+  //     return this.menuService.instaLogin(page);
+  //   }
 }
